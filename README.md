@@ -273,7 +273,8 @@ confidence; clamping choice:11+=0.1006.
 本 fork **只做了两件事**：汉化终端界面、补上 Windows + NVIDIA 的支持与实测记录。
 模型架构、推理实现、提示构造、校准与输出格式**全部保持上游原样**，未作任何改动。
 
-上游英文文档与 `BENCHMARKS.md` 保持不变；完整基准方法与原始计时样本见上游仓库。
+上游原始文档保持不变：`README.zh-CN.md`（上游官方中文版）与 `BENCHMARKS.md`
+（完整基准方法与原始计时样本）都可直接查阅。本 README 替换的是原英文 `README.md`。
 
 ## 许可与署名
 
