@@ -11,7 +11,7 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 
-from .ui import BG, DIM, MUTED, compose
+from .ui import BG, DIM, MUTED, char_width, compose
 
 
 def load_record(path):
@@ -71,7 +71,7 @@ class TerminalRaster:
         title_font = ImageFont.truetype(str(font_path), max(12, size - 9))
         draw.text(
             (width // 2, self.y - 24),
-            "laya-snake  /  real recorded decisions",
+            "laya-snake  /  真实录制决策",
             font=title_font,
             fill=MUTED,
             anchor="mt",
@@ -80,16 +80,19 @@ class TerminalRaster:
     def glyph(self, character, color):
         key = character, color
         if key not in self.cache:
-            glyph = Image.new("RGBA", (self.cw, self.ch), (0, 0, 0, 0))
+            # CJK glyphs span two terminal columns; without a canvas that wide
+            # the rasteriser clips them to their left half.
+            width = self.cw * char_width(character)
+            glyph = Image.new("RGBA", (width, self.ch), (0, 0, 0, 0))
             draw = ImageDraw.Draw(glyph)
             if character == "█":
-                draw.rectangle((0, 0, self.cw, self.ch), fill=color)
+                draw.rectangle((0, 0, width, self.ch), fill=color)
             elif character == "▀":
-                draw.rectangle((0, 0, self.cw, self.ch // 2), fill=color)
+                draw.rectangle((0, 0, width, self.ch // 2), fill=color)
             elif character == "▄":
-                draw.rectangle((0, self.ch // 2, self.cw, self.ch), fill=color)
+                draw.rectangle((0, self.ch // 2, width, self.ch), fill=color)
             elif character == "━":
-                draw.rectangle((0, self.ch // 2, self.cw, self.ch // 2 + 1), fill=color)
+                draw.rectangle((0, self.ch // 2, width, self.ch // 2 + 1), fill=color)
             else:
                 draw.text((0, -1), character, font=self.font, fill=color, anchor="la")
             self.cache[key] = glyph
@@ -99,7 +102,8 @@ class TerminalRaster:
         frame = self.base.copy()
         for row, (characters, colors) in enumerate(zip(canvas.chars, canvas.styles)):
             for column, (character, color) in enumerate(zip(characters, colors)):
-                if character != " ":
+                # "" marks the trailing cell of a wide glyph: it owns no pixels.
+                if character not in (" ", ""):
                     glyph = self.glyph(character, color)
                     frame.paste(glyph, (self.x + column * self.cw, self.y + row * self.ch), glyph)
         return frame
